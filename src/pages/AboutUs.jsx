@@ -477,7 +477,7 @@ export default function AboutUs() {
       {/* CHANGE 8 — Footer */}
       <footer className="bg-[#1A1A1A] text-white pt-12 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
             <div>
               <h4 className="font-bold mb-4">Afrimercato</h4>
               <p className="text-gray-400 text-sm">Fresh African groceries delivered across the UK.</p>
@@ -497,6 +497,20 @@ export default function AboutUs() {
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li><Link to="/delivery" className="hover:text-[#FFB800]">Delivery Info</Link></li>
                 <li><Link to="/partner" className="hover:text-[#FFB800]">Partner With Us</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Cities</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li>Bristol</li>
+                <li>London</li>
+                <li>Leicester</li>
+                <li>Liverpool</li>
+                <li>Birmingham</li>
+                <li>Manchester</li>
+                <li>Cardiff</li>
+                <li>Newport</li>
+                <li>Swansea</li>
               </ul>
             </div>
             <div>

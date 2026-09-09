@@ -987,7 +987,8 @@ export const getRepurchaseItems = async () => {
 
 export const checkoutAPI = {
   initializePayment: initializeCheckoutPayment,
-  getRepurchaseItems
+  getRepurchaseItems,
+  validateCoupon: (couponCode) => apiCall(`/coupons/${couponCode}/validate`, { method: 'GET' })
 };
 
 export const userAPI = {

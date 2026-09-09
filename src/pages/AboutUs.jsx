@@ -511,6 +511,9 @@ export default function AboutUs() {
                 <li>Cardiff</li>
                 <li>Newport</li>
                 <li>Swansea</li>
+                <li>Plymouth</li>
+                <li>Essex</li>
+                <li>Sussex</li>
               </ul>
             </div>
             <div>

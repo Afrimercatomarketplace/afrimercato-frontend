@@ -28,13 +28,26 @@ function NotificationsCenter() {
   const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Simulate loading notifications
-    setTimeout(() => {
-      setNotifications(mockNotifications)
-      setLoading(false)
-    }, 500)
-  }, [])
+const clearAll = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/notifications/all', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to clear notifications');
+
+    // Clear state only if backend confirms success
+    setNotifications([]);
+  } catch (err) {
+    console.error(err);
+    // Optionally show user feedback
+  }
+};
 
   const markAsRead = (id) => {
     setNotifications(prev =>
@@ -46,9 +59,26 @@ function NotificationsCenter() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 
-  const deleteNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))
+ const deleteNotification = async (id) => {
+  try {
+    const token = localStorage.getItem('token'); // my auth token retrieval method
+    const res = await fetch(`/api/notifications/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to delete notification');
+
+    // Remove from state only if backend confirms success
+    setNotifications(prev => prev.filter(n => n._id !== id));
+  } catch (err) {
+    console.error(err);
+    // Optionally show user feedback
   }
+};
 
   const clearAll = () => {
     setNotifications([])

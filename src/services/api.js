@@ -1155,7 +1155,7 @@ export const deleteNotification = async (id) => {
 };
 
 export const deleteAllReadNotifications = async () => {
-  return apiCall('/notifications', {
+  return apiCall('/notifications/read', {
     method: 'DELETE'
   });
 };

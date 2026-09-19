@@ -81,6 +81,9 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const VendorPayoutSettings = lazy(() => import('./pages/vendor/PayoutSettings'))
 const PickerPayoutSettings = lazy(() => import('./pages/picker/PayoutSettings'))
+const PickerPayouts = lazy(() => import('./pages/picker/PickerPayouts'))
+const PickerHistory = lazy(() => import('./pages/picker/PickerHistory'))
+const PickerEarnings = lazy(() => import('./pages/picker/PickerEarnings'))
 const RiderPayoutSettings = lazy(() => import('./pages/rider/PayoutSettings'))
 const AdminPayouts = lazy(() => import('./pages/admin/AdminPayout'))
 
@@ -284,6 +287,9 @@ function AppContent() {
           <Route path="/picker/profile" element={isAuthenticated && (user?.role === 'picker' || user?.roles?.includes('picker')) ? <PickerLayout><PickerProfile /></PickerLayout> : isAuthenticated ? <RoleBasedRedirect /> : <Navigate to="/login" />} />
           <Route path="/picker/explore" element={isAuthenticated && (user?.role === 'picker' || user?.roles?.includes('picker')) ? <PickerLayout><PickerStoreExplore /></PickerLayout> : isAuthenticated ? <RoleBasedRedirect /> : <Navigate to="/login" />} />
           <Route path="/picker/payout-settings" element={isAuthenticated && (user?.role === 'picker' || user?.roles?.includes('picker')) ? <PickerLayout><PickerPayoutSettings /></PickerLayout> : isAuthenticated ? <RoleBasedRedirect /> : <Navigate to="/login" />} />
+          <Route path="/picker/payouts" element={isAuthenticated && (user?.role === 'picker' || user?.roles?.includes('picker')) ? <PickerLayout><PickerPayouts /></PickerLayout> : isAuthenticated ? <RoleBasedRedirect /> : <Navigate to="/login" />} />
+          <Route path="/picker/history" element={isAuthenticated && (user?.role === 'picker' || user?.roles?.includes('picker')) ? <PickerLayout><PickerHistory /></PickerLayout> : isAuthenticated ? <RoleBasedRedirect /> : <Navigate to="/login" />} />
+          <Route path="/picker/earnings" element={isAuthenticated && (user?.role === 'picker' || user?.roles?.includes('picker')) ? <PickerLayout><PickerEarnings /></PickerLayout> : isAuthenticated ? <RoleBasedRedirect /> : <Navigate to="/login" />} />
 
           <Route
             path="/login"

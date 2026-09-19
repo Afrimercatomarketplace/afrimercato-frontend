@@ -313,37 +313,53 @@ function NotificationsTab() {
     smsOrders: true,
     pushNotifications: true,
   })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  
+  useEffect(() => {
+    vendorAPI.getProfile().then(res => {
+      if (res?.data?.data?.vendor?.notificationPreferences) {
+        setSettings(res.data.data.vendor.notificationPreferences)
+      }
+    }).catch(console.error)
+  }, [])
 
   const handleToggle = (setting) => {
     setSettings({ ...settings, [setting]: !settings[setting] })
   }
 
+  const handleSave = async () => {
+    setLoading(true)
+    setSuccess(false)
+    try {
+      await vendorAPI.updateProfile({ notificationPreferences: settings })
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (error) {
+      console.error('Error saving settings', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Coming Soon Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">🔔</span>
-          <div>
-            <h4 className="font-semibold text-blue-900 mb-1">Notification Preferences - Coming Soon</h4>
-            <p className="text-sm text-blue-800">
-              Notification settings will be available in the next update. All toggles are currently for display only and won't save changes.
-            </p>
-          </div>
+      {success && (
+        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+          <p className="text-green-700">Notification preferences updated successfully!</p>
         </div>
-      </div>
+      )}
 
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h3>
-        <div className="space-y-4 opacity-60 cursor-not-allowed" title="Coming soon in next update">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg pointer-events-none">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium text-gray-900">Order Notifications (Email)</p>
               <p className="text-sm text-gray-600">Receive email updates about new orders</p>
             </div>
             <button
               onClick={() => handleToggle('emailOrders')}
-              disabled
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
                 settings.emailOrders ? 'bg-afri-green' : 'bg-gray-300'
               }`}
@@ -356,14 +372,13 @@ function NotificationsTab() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg pointer-events-none">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium text-gray-900">Promotional Emails</p>
               <p className="text-sm text-gray-600">Receive offers and promotions</p>
             </div>
             <button
               onClick={() => handleToggle('emailPromotions')}
-              disabled
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
                 settings.emailPromotions ? 'bg-afri-green' : 'bg-gray-300'
               }`}
@@ -376,14 +391,13 @@ function NotificationsTab() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg pointer-events-none">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium text-gray-900">SMS Notifications</p>
               <p className="text-sm text-gray-600">Receive SMS for important updates</p>
             </div>
             <button
               onClick={() => handleToggle('smsOrders')}
-              disabled
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
                 settings.smsOrders ? 'bg-afri-green' : 'bg-gray-300'
               }`}
@@ -396,14 +410,13 @@ function NotificationsTab() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg pointer-events-none">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium text-gray-900">Push Notifications</p>
               <p className="text-sm text-gray-600">Receive push notifications on your device</p>
             </div>
             <button
               onClick={() => handleToggle('pushNotifications')}
-              disabled
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
                 settings.pushNotifications ? 'bg-afri-green' : 'bg-gray-300'
               }`}
@@ -420,11 +433,11 @@ function NotificationsTab() {
 
       <div className="flex justify-end">
         <button 
-          disabled
-          title="Coming soon in next update"
-          className="px-6 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed font-medium"
+          onClick={handleSave}
+          disabled={loading}
+          className="px-6 py-2 bg-afri-green text-white rounded-lg hover:bg-afri-green-dark transition font-medium disabled:opacity-50"
         >
-          Save Preferences (Coming Soon)
+          {loading ? 'Saving...' : 'Save Preferences'}
         </button>
       </div>
     </div>

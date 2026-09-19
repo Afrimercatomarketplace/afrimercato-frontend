@@ -224,17 +224,34 @@ export default function PickerProfile() {
                     </div>
                     <div className="bg-orange-50 rounded-xl p-4 text-center">
                       <p className="text-2xl font-black text-orange-600">
-                        {stats.avgPickTime > 0 ? `${stats.averageTimePerOrder}m` : '15mins'}
+                        {stats.avgPickTime > 0 ? `${stats.avgPickTime}m` : '15mins'}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Avg Pick Time</p>
                     </div>
                   </div>
                 )}
+                
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/picker/history')}
+                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                  >
+                    View History
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/picker/earnings')}
+                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                  >
+                    View Earnings
+                  </button>
+                </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                  className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
                 >
                   {loading ? 'Saving…' : 'Save Changes'}
                 </button>

@@ -44,7 +44,7 @@ export const FEATURES = {
   
   // ==================== PAYMENT FEATURES (PARTIAL) ====================
   PAYMENT_BASIC: true,
-  PAYMENT_REFUNDS: false,
+  PAYMENT_REFUNDS: true,
   PAYMENT_SUBSCRIPTIONS: false,
   
   // ==================== TRACKING FEATURES (PARTIAL) ====================
@@ -53,11 +53,11 @@ export const FEATURES = {
   TRACKING_LIVE_MAP: false,
   
   // ==================== GDPR FEATURES (DISABLED) ====================
-  GDPR_DATA_EXPORT: false,
-  GDPR_ACCOUNT_DELETION: false,
+  GDPR_DATA_EXPORT: true,
+  GDPR_ACCOUNT_DELETION: true,
   
   // ==================== OTHER FEATURES ====================
-  VENDOR_PAYOUTS: false,
+  VENDOR_PAYOUTS: true,
   VENDOR_SUBSCRIPTIONS: false,
   NOTIFICATIONS_PUSH: false,
 };

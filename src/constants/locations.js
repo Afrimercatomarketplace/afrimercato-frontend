@@ -25,6 +25,8 @@ export const SUGGESTED_CITIES = [
   { name: 'Essex', country: 'UK', region: 'England' },
   { name: 'Sussex', country: 'UK', region: 'England' },
   { name: 'Cardiff', country: 'UK', region: 'Wales' },
+  { name: 'Newport', country: 'UK', region: 'Wales' },
+  { name: 'Swansea', country: 'UK', region: 'Wales' },
   { name: 'Edinburgh', country: 'UK', region: 'Scotland' },
   { name: 'Glasgow', country: 'UK', region: 'Scotland' },
   

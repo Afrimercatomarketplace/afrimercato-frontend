@@ -1,12 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-
-const mockNotifications = [
-  { id: 1, type: 'order', title: 'Order Delivered', message: 'Your order #AFM123 has been delivered', time: '2 mins ago', read: false },
-  { id: 2, type: 'promo', title: '20% Off Fresh Produce', message: 'Limited time offer on all vegetables', time: '1 hour ago', read: false },
-  { id: 3, type: 'order', title: 'Order Confirmed', message: 'Your order #AFM122 is being prepared', time: '3 hours ago', read: true },
-  { id: 4, type: 'system', title: 'Welcome to AfriMercato!', message: 'Thanks for joining. Explore fresh African groceries.', time: '1 day ago', read: true }
-]
 
 const typeIcons = {
   order: '📦',
@@ -23,65 +15,81 @@ const typeColors = {
 }
 
 function NotificationsCenter() {
-  const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
   const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
 
-const clearAll = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/notifications/all', {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+  // Fetch real notifications from the backend
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const res = await fetch('/api/notifications', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        if (!res.ok) throw new Error('Failed to fetch notifications')
+        const json = await res.json()
+        if (json.success) {
+          setNotifications(json.data.notifications)
+        }
+      } catch (err) {
+        console.error('Error fetching notifications:', err)
+      } finally {
+        setLoading(false)
       }
-    });
+    }
+    fetchNotifications()
+  }, [])
 
-    if (!res.ok) throw new Error('Failed to clear notifications');
-
-    // Clear state only if backend confirms success
-    setNotifications([]);
-  } catch (err) {
-    console.error(err);
-    // Optionally show user feedback
+  // Delete a single notification
+  const deleteNotification = async (id) => {
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      if (!res.ok) throw new Error('Failed to delete notification')
+      // Remove from state only after backend confirms
+      setNotifications(prev => prev.filter(n => n._id !== id))
+    } catch (err) {
+      console.error('Error deleting notification:', err)
+    }
   }
-};
 
+  // Delete all notifications
+  const clearAll = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/notifications/all', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      if (!res.ok) throw new Error('Failed to clear notifications')
+      setNotifications([])
+    } catch (err) {
+      console.error('Error clearing notifications:', err)
+    }
+  }
+
+  // Mark one as read (local state only – backend call can be added later)
   const markAsRead = (id) => {
     setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
+      prev.map(n => n._id === id ? { ...n, read: true } : n)
     )
   }
 
+  // Mark all as read (local state only – backend call can be added later)
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-  }
-
- const deleteNotification = async (id) => {
-  try {
-    const token = localStorage.getItem('token'); // my auth token retrieval method
-    const res = await fetch(`/api/notifications/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!res.ok) throw new Error('Failed to delete notification');
-
-    // Remove from state only if backend confirms success
-    setNotifications(prev => prev.filter(n => n._id !== id));
-  } catch (err) {
-    console.error(err);
-    // Optionally show user feedback
-  }
-};
-
-  const clearAll = () => {
-    setNotifications([])
   }
 
   const filteredNotifications = filter === 'all'
@@ -171,11 +179,11 @@ const clearAll = async () => {
           <div className="space-y-3">
             {filteredNotifications.map(notification => (
               <div
-                key={notification.id}
+                key={notification._id}
                 className={`bg-white rounded-xl shadow-lg p-4 cursor-pointer transition-all hover:shadow-xl ${
                   !notification.read ? 'border-l-4 border-afri-green' : ''
                 }`}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => markAsRead(notification._id)}
               >
                 <div className="flex gap-4">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${typeColors[notification.type]}`}>
@@ -190,7 +198,7 @@ const clearAll = async () => {
                         <p className="text-sm text-gray-500 mt-1">{notification.message}</p>
                       </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id) }}
+                        onClick={(e) => { e.stopPropagation(); deleteNotification(notification._id) }}
                         className="text-gray-400 hover:text-red-500 p-1"
                       >
                         ✕

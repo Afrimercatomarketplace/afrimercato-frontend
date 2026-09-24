@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiCall } from '../../services/api'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Package, MapPin, Clock, Ruler, ChevronRight, RefreshCw, Lock, XCircle } from 'lucide-react'
+import { Package, MapPin, Clock, Ruler, ChevronRight, RefreshCw, Lock } from 'lucide-react'
 
 const STATUS_CONFIG = {
   pending: { label: 'Awaiting Pickup', color: 'bg-amber-100 text-amber-700', stripe: 'bg-amber-400' },
@@ -16,8 +16,8 @@ const STATUS_CONFIG = {
 const FILTERS = [
   { id: 'active', label: 'Active' },
   { id: 'completed', label: 'Completed' },
-  // { id: 'cancelled', label: 'Cancelled' },
 ]
+
 function SkeletonDelivery() {
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
@@ -72,54 +72,73 @@ function RiderDeliveries() {
 
   useEffect(() => { fetchDeliveries() }, [fetchDeliveries])
 
+  // Handles three action types:
+  //   - pickup / complete → open the PIN modal
+  //   - unassign          → confirm, call API, then refetch (H9 bug fix)
+  //   - anything else     → generic POST + refetch
   const handleAction = async (e, id, action) => {
-    e.stopPropagation();
-    if (!action) return;
+    e.stopPropagation()
+    if (!action) return
 
     if (action === 'pickup') {
       setActiveDeliveryId(id)
       setPinModalType('pickup')
-      return;
+      return
     }
     if (action === 'complete') {
       setActiveDeliveryId(id)
       setPinModalType('delivery')
-      return;
+      return
     }
 
+    // H9: previously this fired the unassign request and returned without
+    // refetching, so the dropped gig stayed on screen. Now we await, refetch,
+    // and surface backend errors.
     if (action === 'unassign') {
-      const confirmDrop = window.confirm("Are you sure you want to drop this gig? It will affect your completion rate.");
-      if (!confirmDrop) return;
-      await apiCall(`/riders/deliveries/${id}/unassign`, { method: 'POST' });
-      return;
+      const confirmDrop = window.confirm(
+        'Are you sure you want to drop this gig? It will affect your completion rate.'
+      )
+      if (!confirmDrop) return
+
+      setActionLoading(id + action)
+      try {
+        await apiCall(`/riders/deliveries/${id}/unassign`, { method: 'POST' })
+        await fetchDeliveries()
+      } catch (err) {
+        alert(err?.response?.data?.message || err?.message || 'Could not drop this gig.')
+      } finally {
+        setActionLoading(null)
+      }
+      return
     }
 
+    // Generic fallback (accept, etc.)
     setActionLoading(id + action)
     try {
       await apiCall(`/riders/deliveries/${id}/${action}`, { method: 'POST' })
       await fetchDeliveries()
     } catch (err) {
-      alert(err?.message || `Failed to update status. Please try again.`)
+      alert(err?.response?.data?.message || err?.message || 'Failed to update status. Please try again.')
     } finally {
       setActionLoading(null)
     }
   }
 
   const handlePinSubmit = async () => {
-    if (pin.length !== 4) return alert('Please enter a 4-digit PIN');
-    if (!activeDeliveryId) return;
+    if (pin.length !== 4) return alert('Please enter a 4-digit PIN')
+    if (!activeDeliveryId) return
 
     setActionLoading('pin_submit')
     try {
       if (pinModalType === 'pickup') {
         await apiCall(`/riders/deliveries/${activeDeliveryId}/pickup`, {
           method: 'POST',
-          body: JSON.stringify({ pickupPin: pin })
+          body: JSON.stringify({ pickupPin: pin }),
         })
       } else if (pinModalType === 'delivery') {
         await apiCall(`/riders/deliveries/${activeDeliveryId}/complete`, {
           method: 'POST',
-          body: JSON.stringify({ deliveryPin: pin })
+          body: JSON.stringify({ deliveryPin: pin }),
         })
       }
 
@@ -130,6 +149,7 @@ function RiderDeliveries() {
     } catch (err) {
       alert(err.response?.data?.message || err.message || 'Invalid PIN. Please try again.')
     } finally {
+      // Was corrupted to `set ding(null)na` in the earlier paste — this is correct.
       setActionLoading(null)
     }
   }
@@ -139,27 +159,29 @@ function RiderDeliveries() {
       {/* Header */}
       <div className="bg-gradient-to-br from-afri-gray-900 via-[#1A1A1A] to-[#2B3632] px-5 pt-14 pb-6 rounded-b-[2rem]">
         <h1 className="text-white text-2xl font-bold">My Deliveries</h1>
-        <p className="text-afri-green-light text-sm mt-0.5">{deliveries.length} {filter} {deliveries.length === 1 ? 'delivery' : 'deliveries'}</p>
+        <p className="text-afri-green-light text-sm mt-0.5">
+          {deliveries.length} {filter} {deliveries.length === 1 ? 'delivery' : 'deliveries'}
+        </p>
       </div>
 
       <div className="px-5 py-5 space-y-5">
-        {/* Filter Tabs */}
+        {/* Filter tabs */}
         <div className="flex gap-2 bg-white rounded-2xl p-1.5 shadow-sm">
           {FILTERS.map(f => (
             <button
               key={f.id}
               onClick={() => setFilter(f.id)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${filter === f.id
-                ? 'bg-afri-green text-white shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-                }`}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                filter === f.id
+                  ? 'bg-afri-green text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
               {f.label}
             </button>
           ))}
         </div>
 
-        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between">
             <p className="text-red-600 text-sm">{error}</p>
@@ -169,20 +191,26 @@ function RiderDeliveries() {
           </div>
         )}
 
-        {/* List */}
         <AnimatePresence mode="wait">
           {loading ? (
             <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
               {[1, 2, 3].map(i => <SkeletonDelivery key={i} />)}
             </motion.div>
           ) : deliveries.length === 0 ? (
-            <motion.div key="empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl p-12 text-center shadow-sm">
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl p-12 text-center shadow-sm"
+            >
               <div className="w-20 h-20 bg-afri-green-pale rounded-full flex items-center justify-center mx-auto mb-4">
                 <Package size={32} className="text-afri-green-light" />
               </div>
               <p className="font-bold text-gray-700 text-lg">No {filter} deliveries</p>
               <p className="text-gray-400 text-sm mt-1">
-                {filter === 'active' ? 'New orders will appear here when assigned to you' : `Nothing here yet`}
+                {filter === 'active'
+                  ? 'New orders will appear here when assigned to you'
+                  : 'Nothing here yet'}
               </p>
             </motion.div>
           ) : (
@@ -191,10 +219,10 @@ function RiderDeliveries() {
                 const id = d.id || d._id
                 const defaultStatus = filter === 'completed' ? 'delivered' : 'pending'
                 const st = STATUS_CONFIG[d.status] || STATUS_CONFIG[defaultStatus]
-                const actualVendor = d.vendor || (d.items?.length > 0 ? d.items[0].vendor : null);
-                const vendorName = actualVendor?.storeName || actualVendor?.name || 'Partner Store';
-                const orderItems = d.items || d.order?.items || [];
-                const earnings = Number(d.riderEarnings || d.earnings || d.deliveryFee || 0).toFixed(2);
+                const actualVendor = d.vendor || (d.items?.length > 0 ? d.items[0].vendor : null)
+                const vendorName = actualVendor?.storeName || actualVendor?.name || 'Partner Store'
+                const orderItems = d.items || d.order?.items || []
+                const earnings = Number(d.riderEarnings || d.earnings || d.deliveryFee || 0).toFixed(2)
 
                 return (
                   <motion.div
@@ -207,7 +235,6 @@ function RiderDeliveries() {
                   >
                     <div className={`h-1 w-full ${st.stripe}`} />
                     <div className="p-4">
-                      {/* Top row */}
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <div className="flex items-center gap-2 mb-0.5">
@@ -218,14 +245,13 @@ function RiderDeliveries() {
                               {st.label}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-500 font-medium">From: <span className="text-gray-800">{vendorName}</span></p>
+                          <p className="text-xs text-gray-500 font-medium">
+                            From: <span className="text-gray-800">{vendorName}</span>
+                          </p>
                         </div>
-                        <span className="text-lg font-black text-emerald-600">
-                          £{earnings}
-                        </span>
+                        <span className="text-lg font-black text-emerald-600">£{earnings}</span>
                       </div>
 
-                      {/* Items Preview (NEW) */}
                       {orderItems.length > 0 && (
                         <div className="mb-4 bg-gray-50 rounded-xl p-3 border border-gray-100">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
@@ -249,7 +275,6 @@ function RiderDeliveries() {
                         </div>
                       )}
 
-                      {/* Address */}
                       <div className="flex items-start gap-2 mb-3">
                         <MapPin size={14} className="text-afri-green mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
@@ -257,26 +282,40 @@ function RiderDeliveries() {
                             Deliver to: {d.deliveryAddress?.fullName || d.customer?.name || 'Customer'}
                           </p>
                           <p className="text-xs text-gray-400 truncate">
-                            {d.deliveryAddress ? [d.deliveryAddress.street, d.deliveryAddress.city, d.deliveryAddress.postcode].filter(Boolean).join(', ') : d.deliveryAddress?.address || '—'}
+                            {d.deliveryAddress
+                              ? [d.deliveryAddress.street, d.deliveryAddress.city, d.deliveryAddress.postcode]
+                                  .filter(Boolean)
+                                  .join(', ')
+                              : d.deliveryAddress?.address || '—'}
                           </p>
                         </div>
                       </div>
 
-                      {/* Bottom row / Actions */}
                       {filter === 'active' && (
                         <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                           <div className="flex items-center gap-3 text-xs text-gray-400">
-                            {d.distance && <span className="flex items-center gap-1"><Ruler size={11} />{d.distance} km</span>}
-                            {d.estimatedDeliveryTime && <span className="flex items-center gap-1"><Clock size={11} />{new Date(d.estimatedDeliveryTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>}
+                            {d.distance && (
+                              <span className="flex items-center gap-1"><Ruler size={11} />{d.distance} km</span>
+                            )}
+                            {d.estimatedDeliveryTime && (
+                              <span className="flex items-center gap-1">
+                                <Clock size={11} />
+                                {new Date(d.estimatedDeliveryTime).toLocaleTimeString('en-GB', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
-                            {/* NEW: Drop Gig Button (Only visible before pickup) */}
+                            {/* H9: Drop button — disabled while its own request is in-flight. */}
                             {d.status === 'assigned_to_rider' && (
                               <button
                                 onClick={e => handleAction(e, id, 'unassign')}
-                                className="px-3 py-1.5 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition-colors"
+                                disabled={actionLoading === id + 'unassign'}
+                                className="px-3 py-1.5 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition-colors disabled:opacity-50"
                               >
-                                Drop
+                                {actionLoading === id + 'unassign' ? '...' : 'Drop'}
                               </button>
                             )}
 
@@ -289,6 +328,7 @@ function RiderDeliveries() {
                                 {actionLoading === id + 'pickup' ? '...' : 'Confirm Pickup'}
                               </button>
                             )}
+
                             {(d.status === 'picked_up_by_rider' || d.status === 'out_for_delivery') && (
                               <button
                                 onClick={e => handleAction(e, id, 'complete')}
@@ -298,6 +338,7 @@ function RiderDeliveries() {
                                 {actionLoading === id + 'complete' ? '...' : '✓ Delivered'}
                               </button>
                             )}
+
                             <button
                               onClick={e => { e.stopPropagation(); navigate(`/rider/delivery/${id}`) }}
                               className="w-8 h-8 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors"
@@ -315,14 +356,16 @@ function RiderDeliveries() {
           )}
         </AnimatePresence>
 
-        {/* UNIFIED PIN Verification Modal */}
+        {/* Unified PIN modal */}
         <AnimatePresence>
           {pinModalType && (
             <>
               <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
-                onClick={() => { setPinModalType(null); setPin(''); setActiveDeliveryId(null); }}
+                onClick={() => { setPinModalType(null); setPin(''); setActiveDeliveryId(null) }}
               />
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -331,8 +374,15 @@ function RiderDeliveries() {
                 className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-white rounded-2xl p-6 z-50 shadow-2xl"
               >
                 <div className="text-center mb-6">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${pinModalType === 'pickup' ? 'bg-orange-100' : 'bg-emerald-100'}`}>
-                    <Lock size={28} className={pinModalType === 'pickup' ? 'text-orange-500' : 'text-emerald-500'} />
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                      pinModalType === 'pickup' ? 'bg-orange-100' : 'bg-emerald-100'
+                    }`}
+                  >
+                    <Lock
+                      size={28}
+                      className={pinModalType === 'pickup' ? 'text-orange-500' : 'text-emerald-500'}
+                    />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">
                     {pinModalType === 'pickup' ? 'Secure Pickup' : 'Complete Delivery'}
@@ -356,7 +406,7 @@ function RiderDeliveries() {
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => { setPinModalType(null); setPin(''); setActiveDeliveryId(null); }}
+                    onClick={() => { setPinModalType(null); setPin(''); setActiveDeliveryId(null) }}
                     className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200"
                   >
                     Cancel
@@ -364,8 +414,11 @@ function RiderDeliveries() {
                   <button
                     onClick={handlePinSubmit}
                     disabled={pin.length !== 4 || actionLoading === 'pin_submit'}
-                    className={`flex-1 py-3 text-white font-bold rounded-xl disabled:opacity-50 transition-colors ${pinModalType === 'pickup' ? 'bg-[#FF8F00] hover:bg-[#E68100]' : 'bg-emerald-600 hover:bg-emerald-700'
-                      }`}
+                    className={`flex-1 py-3 text-white font-bold rounded-xl disabled:opacity-50 transition-colors ${
+                      pinModalType === 'pickup'
+                        ? 'bg-[#FF8F00] hover:bg-[#E68100]'
+                        : 'bg-emerald-600 hover:bg-emerald-700'
+                    }`}
                   >
                     {actionLoading === 'pin_submit' ? 'Verifying...' : 'Verify & Finish'}
                   </button>

@@ -181,7 +181,7 @@ function LandingPage() {
           {/* Quick Location Suggestions */}
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="text-sm text-gray-600">Popular locations:</span>
-            {['London', 'Birmingham', 'Manchester', 'Bristol', 'Leeds'].map((city) => (
+            {['London', 'Birmingham', 'Manchester', 'Bristol', 'Leeds', 'Cardiff', 'Newport', 'Swansea', 'Plymouth', 'Liverpool', 'Essex', 'Sussex'].map((city) => (
               <button
                 key={city}
                 onClick={() => setSearchData({...searchData, location: city})}

@@ -57,7 +57,7 @@ export default function ClientLandingPage() {
   const debounceRef = useRef(null)
 
   // ADDED: include Cardiff, Newport, Swansea in recent searches
-  const recentSearches = ['Bristol', 'London', 'Manchester', 'Birmingham', 'Cardiff', 'Newport', 'Swansea']
+  const recentSearches = ['Bristol', 'London', 'Manchester', 'Birmingham', 'Cardiff', 'Newport', 'Swansea', 'Liverpool', 'Plymouth', 'Essex', 'Sussex']
 
   // Detect scroll for nav styling
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function ClientLandingPage() {
     'London', 'Manchester', 'Birmingham', 'Leeds', 'Sheffield',
     'Bristol', 'Liverpool', 'Leicester', 'Edinburgh', 'Glasgow',
     'Coventry', 'Bradford', 'Nottingham', 'Southampton', 'Cardiff',   // added Cardiff
-    'Newport', 'Swansea',                                            // added Newport, Swansea
+    'Newport', 'Swansea', 'Plymouth', 'Essex', 'Sussex',             // added Newport, Swansea, Plymouth, Essex, Sussex
     'Peckham, London', 'Brixton, London', 'Tottenham, London',
     'East Ham, London', 'Hackney, London', 'Lewisham, London',
     'Croydon, London', 'Southwark, London', 'Newham, London',
@@ -625,7 +625,7 @@ export default function ClientLandingPage() {
             >
               <span className="text-gray-700 text-sm font-medium">Popular:</span>
               {/* ADDED: replaced Leeds with Cardiff, and added Newport, Swansea as extra tags */}
-              {['London', 'Birmingham', 'Manchester', 'Cardiff', 'Bristol', 'Newport', 'Swansea'].map((city) => (
+              {['London', 'Birmingham', 'Manchester', 'Cardiff', 'Bristol', 'Newport', 'Swansea', 'Liverpool', 'Plymouth', 'Essex', 'Sussex'].map((city) => (
                 <button
                   key={city}
                   type="button"

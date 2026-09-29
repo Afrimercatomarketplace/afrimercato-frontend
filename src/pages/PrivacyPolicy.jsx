@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { apiCall } from '../../services/api';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { apiCall } from '../services/api';
 
 /**
  * Privacy Policy Page
@@ -15,6 +15,8 @@ function PrivacyPolicy() {
   // Loading states for buttons
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [cancelDeletionLoading, setCancelDeletionLoading] = useState(false);
+  const [deletionPending, setDeletionPending] = useState(false);
   const [complaintLoading, setComplaintLoading] = useState(false);
 
   // Feedback messages
@@ -24,6 +26,16 @@ function PrivacyPolicy() {
   const [showComplaintModal, setShowComplaintModal] = useState(false);
   const [complaintText, setComplaintText] = useState('');
   const [complaintError, setComplaintError] = useState('');
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setDeletionPending(false);
+      return;
+    }
+    apiCall('/privacy/deletion-status')
+      .then(response => setDeletionPending(Boolean(response.data?.hasPendingDeletion)))
+      .catch(() => setDeletionPending(false));
+  }, [isAuthenticated]);
 
   // ===== Helper: show toast message =====
   const showMessage = (type, text) => {
@@ -41,9 +53,14 @@ function PrivacyPolicy() {
 
     setExportLoading(true);
     try {
-      const response = await apiCall('/gdpr/export', { method: 'GET' });
+      const password = window.prompt('Confirm your password to export your data:');
+      if (!password) return;
+      const response = await apiCall('/privacy/my-data/export', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
       // The backend should return a JSON blob – we create a downloadable file
-      const data = JSON.stringify(response.data, null, 2);
+      const data = JSON.stringify(response.data ?? response, null, 2);
       const blob = new Blob([data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -71,25 +88,40 @@ function PrivacyPolicy() {
 
     const confirmed = window.confirm(
       '⚠️ Are you sure you want to delete your account?\n\n' +
-      'This action is irreversible. All your personal data, orders, and account information will be permanently removed.\n' +
-      'You will lose access to your account and any ongoing orders or refunds will be cancelled.\n\n' +
-      'Do you wish to proceed?'
+      'Your account will be scheduled for anonymization after a 30-day grace period. You can contact support to cancel before then.\n\n' +
+      'Do you wish to submit this request?'
     );
     if (!confirmed) return;
 
     setDeleteLoading(true);
     try {
-      await apiCall('/gdpr/delete', { method: 'DELETE' });
-      showMessage('success', 'Account deletion request submitted. You will receive a confirmation email shortly.');
-      // Optionally log the user out after a few seconds
-      setTimeout(() => {
-        window.location.href = '/logout';
-      }, 3000);
+      const password = window.prompt('Confirm your password to request account deletion:');
+      if (!password) return;
+      const response = await apiCall('/privacy/request-deletion', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+      setDeletionPending(true);
+      showMessage('success', response.message || 'Account deletion request submitted. You have 30 days to cancel it.');
     } catch (error) {
       const msg = error.message || 'Failed to request deletion. Please try again.';
       showMessage('error', msg);
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    if (!window.confirm('Cancel your pending account deletion request?')) return;
+    setCancelDeletionLoading(true);
+    try {
+      const response = await apiCall('/privacy/cancel-deletion', { method: 'POST' });
+      setDeletionPending(false);
+      showMessage('success', response.message || 'Your deletion request has been cancelled.');
+    } catch (error) {
+      showMessage('error', error.message || 'Failed to cancel your deletion request.');
+    } finally {
+      setCancelDeletionLoading(false);
     }
   };
 
@@ -109,11 +141,11 @@ function PrivacyPolicy() {
 
     setComplaintLoading(true);
     try {
-      await apiCall('/gdpr/complaint', {
+      await apiCall('/privacy/complaint', {
         method: 'POST',
-        body: JSON.stringify({ complaint: text }),
+        body: JSON.stringify({ message: text }),
       });
-      showMessage('success', 'Your GDPR complaint has been submitted. We will review it within 3 business days.');
+      showMessage('success', 'Your GDPR complaint has been submitted. We will respond within one month.');
       setShowComplaintModal(false);
       setComplaintText('');
     } catch (error) {
@@ -186,11 +218,21 @@ function PrivacyPolicy() {
               {/* Delete Button */}
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleteLoading}
+                disabled={deleteLoading || deletionPending}
                 className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deleteLoading ? 'Requesting...' : '🗑️ Request Account Deletion'}
+                {deleteLoading ? 'Requesting...' : deletionPending ? '🗑️ Deletion Request Pending' : '🗑️ Request Account Deletion'}
               </button>
+
+              {deletionPending && (
+                <button
+                  onClick={handleCancelDeletion}
+                  disabled={cancelDeletionLoading}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {cancelDeletionLoading ? 'Cancelling...' : 'Cancel Deletion Request'}
+                </button>
+              )}
 
               {/* Complaint Button */}
               <button

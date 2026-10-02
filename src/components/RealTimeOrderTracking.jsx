@@ -76,7 +76,7 @@ function RealTimeOrderTracking({ orderId, onClose }) {
     })
 
     // Join order room
-    socketRef.current.emit('joinOrderRoom', orderId)
+   socketRef.current.emit('join-room', orderId)
 
     // Listen for order status updates
     socketRef.current.on('orderStatusUpdate', (data) => {

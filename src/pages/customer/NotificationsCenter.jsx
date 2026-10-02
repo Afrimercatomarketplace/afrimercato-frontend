@@ -81,12 +81,23 @@ function NotificationsCenter() {
   }
 
   // Mark one as read (local state only – backend call can be added later)
-  const markAsRead = (id) => {
+const markAsRead = async (id) => {
+  try {
+    const token = localStorage.getItem('token')
+    await fetch(`/api/notifications/${id}/read`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
     setNotifications(prev =>
       prev.map(n => n._id === id ? { ...n, read: true } : n)
     )
+  } catch (err) {
+    console.error('Failed to mark notification as read:', err)
   }
-
+}
   // Mark all as read (local state only – backend call can be added later)
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))

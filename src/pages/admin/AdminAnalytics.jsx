@@ -29,7 +29,13 @@ function StatCard({ icon: Icon, label, value, sub, color, delay = 0 }) {
       </div>
       <p className="text-xs text-gray-400 font-medium mb-1">{label}</p>
       <p className="text-2xl font-black text-gray-900">{value}</p>
-      {sub && <p className="text-xs text-emerald-600 font-semibold mt-1">{sub}</p>}
+      {sub && (
+        <p className={`text-xs font-semibold mt-1 ${
+          sub.startsWith('-') ? 'text-red-500' : 'text-emerald-600'
+        }`}>
+          {sub}
+        </p>
+      )}
     </motion.div>
   )
 }
@@ -67,19 +73,9 @@ export default function AdminAnalytics() {
   const analytics = data?.analytics || {}
 
   // Build chart data — use real or fallback demo data
-  const revenueData = analytics.revenueByDate || Array.from({ length: 7 }, (_, i) => ({
-    date: new Date(Date.now() - (6 - i) * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-    revenue: Math.round(Math.random() * 800 + 200),
-    orders: Math.round(Math.random() * 40 + 10),
-  }))
+ const revenueData = analytics.revenueByDate || []
 
-  const categoryData = analytics.ordersByCategory || [
-    { name: 'Groceries', value: 45 },
-    { name: 'Produce', value: 28 },
-    { name: 'Meat', value: 15 },
-    { name: 'Dairy', value: 8 },
-    { name: 'Other', value: 4 },
-  ]
+  const categoryData = analytics.ordersByCategory || []
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -121,13 +117,47 @@ export default function AdminAnalytics() {
           </div>
         )}
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={DollarSign} label="Total Revenue"    value={loading ? '—' : `£${(stats.revenue || 0).toFixed(0)}`}   color="bg-emerald-500" delay={0}    sub="+15% vs prev" />
-          <StatCard icon={ShoppingBag} label="Total Orders"    value={loading ? '—' : stats.orders || 0}                        color="bg-afri-yellow-dark"  delay={0.05} sub="+8% vs prev" />
-          <StatCard icon={Users}       label="Total Customers" value={loading ? '—' : stats.users || 0}                         color="bg-afri-green"    delay={0.1}  sub="+12% vs prev" />
-          <StatCard icon={Store}       label="Active Vendors"  value={loading ? '—' : stats.vendors?.approved || 0}             color="bg-amber-500"   delay={0.15} />
-        </div>
+     {/* KPI Cards */}
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  <StatCard
+    icon={DollarSign}
+    label="Total Revenue"
+    value={loading ? '—' : `£${(stats.revenue || 0).toFixed(0)}`}
+    color="bg-emerald-500"
+    delay={0}
+    sub={
+      analytics.comparison?.revenueGrowth !== undefined
+        ? `${analytics.comparison.revenueGrowth >= 0 ? '+' : ''}${analytics.comparison.revenueGrowth}% vs prev period`
+        : null
+    }
+  />
+  <StatCard
+    icon={ShoppingBag}
+    label="Total Orders"
+    value={loading ? '—' : stats.orders || 0}
+    color="bg-afri-yellow-dark"
+    delay={0.05}
+    sub={
+      analytics.comparison?.ordersGrowth !== undefined
+        ? `${analytics.comparison.ordersGrowth >= 0 ? '+' : ''}${analytics.comparison.ordersGrowth}% vs prev period`
+        : null
+    }
+  />
+  <StatCard
+    icon={Users}
+    label="Total Customers"
+    value={loading ? '—' : stats.users || 0}
+    color="bg-afri-green"
+    delay={0.1}
+  />
+  <StatCard
+    icon={Store}
+    label="Active Vendors"
+    value={loading ? '—' : stats.vendors?.approved || 0}
+    color="bg-amber-500"
+    delay={0.15}
+  />
+</div>
 
         {/* Secondary KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -219,13 +249,7 @@ export default function AdminAnalytics() {
             ) : (
               <ResponsiveContainer width="100%" height={190}>
                 <BarChart
-                  data={analytics.topVendors || [
-                    { name: 'Store A', orders: 142 },
-                    { name: 'Store B', orders: 118 },
-                    { name: 'Store C', orders: 97 },
-                    { name: 'Store D', orders: 74 },
-                    { name: 'Store E', orders: 56 },
-                  ]}
+                data={analytics.topVendors || []}
                   layout="vertical"
                   margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
                 >

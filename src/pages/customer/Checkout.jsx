@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { cartAPI, checkoutAPI, getVendorById, getVendorBySlug, userAPI, apiCall, getUserOrders, createPaymentIntent } from '../../services/api'
 import { getCartVendorInfo, checkMinimumOrder } from '../../utils/cartVendorLock'
@@ -883,13 +883,13 @@ function CheckoutForm() {
 
             <p className="text-center text-sm text-gray-500 mt-5">
               No account?{' '}
-              <a
-                // href="/register"
-                onClick={() => localStorage.setItem('checkout_redirect', 'true'), navigate('/register')}
+              <Link
+                to="/register"
+                onClick={() => localStorage.setItem('checkout_redirect', 'true')}
                 className="text-green-600 hover:text-green-700 font-medium"
               >
                 Create one free →
-              </a>
+              </Link>
             </p>
           </div>
 
@@ -1491,6 +1491,9 @@ function CheckoutForm() {
                 )}
 
                 <form onSubmit={handlePlaceOrder}>
+                  <p className="mb-4 text-sm text-gray-600">
+                    Review our <Link to="/privacy-policy#refund-policy" className="font-semibold text-green-700 underline hover:text-green-800">Refund Policy</Link> before placing your order.
+                  </p>
                   <div className="flex gap-4">
                     <button
                       type="button"

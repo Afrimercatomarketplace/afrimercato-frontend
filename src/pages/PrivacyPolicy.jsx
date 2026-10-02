@@ -257,6 +257,16 @@ function PrivacyPolicy() {
             </p>
           </section>
 
+          <section id="refund-policy" className="scroll-mt-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Refund Policy</h2>
+            <div className="space-y-3 text-gray-700 leading-relaxed">
+              <p>If your order is not delivered or the items received are significantly different from what was ordered, you are entitled to a full refund.</p>
+              <p>To request a refund, go to your order history, select the order, and click Request Refund within 14 days of your expected delivery date.</p>
+              <p>Refunds are processed within 5 to 10 business days back to your original payment method.</p>
+              <p>For disputes, you can raise a complaint through your account settings under GDPR and Privacy.</p>
+            </div>
+          </section>
+
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Data We Collect</h2>
             <p className="text-gray-700 leading-relaxed mb-3">

@@ -20,6 +20,7 @@ function Register() {
     storeName: '',
     password: '',
     confirmPassword: '',
+    marketingConsent: false,
     role: ALL_ROLES.includes(roleFromUrl) ? roleFromUrl : 'customer',
   })
 
@@ -40,7 +41,7 @@ function Register() {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
     })
     setError('')
   }
@@ -510,13 +511,27 @@ function Register() {
                 />
                 <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
                   I agree to the{' '}
-                  <Link to="/terms" className="text-afri-green hover:text-afri-green-dark font-medium">
+                  <Link to="/terms-of-service" className="text-afri-green hover:text-afri-green-dark font-medium">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link to="/privacy" className="text-afri-green hover:text-afri-green-dark font-medium">
+                  <Link to="/privacy-policy" className="text-afri-green hover:text-afri-green-dark font-medium">
                     Privacy Policy
                   </Link>
+                </label>
+              </div>
+
+              <div className="flex items-start">
+                <input
+                  id="marketingConsent"
+                  name="marketingConsent"
+                  type="checkbox"
+                  checked={formData.marketingConsent}
+                  onChange={handleChange}
+                  className="h-4 w-4 mt-1 text-afri-green focus:ring-afri-green border-gray-300 rounded"
+                />
+                <label htmlFor="marketingConsent" className="ml-2 block text-sm text-gray-700">
+                  I would like to receive updates, promotions and news from Afrimercato by email. You can unsubscribe at any time.
                 </label>
               </div>
 

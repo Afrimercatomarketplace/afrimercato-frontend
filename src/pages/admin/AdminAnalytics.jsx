@@ -176,6 +176,10 @@ export default function AdminAnalytics() {
           </div>
           {loading ? (
             <div className="h-56 bg-gray-100 rounded-xl animate-pulse" />
+          ) : revenueData.length === 0 ? (
+            <div className="h-56 flex items-center justify-center text-gray-400 text-sm">
+              No revenue data for this period
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={revenueData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -212,6 +216,10 @@ export default function AdminAnalytics() {
             <h2 className="font-bold text-gray-900 mb-4">Orders by Category</h2>
             {loading ? (
               <div className="h-48 bg-gray-100 rounded-xl animate-pulse" />
+            ) : categoryData.length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+                No category data for this period
+              </div>
             ) : (
               <div className="flex items-center gap-4">
                 <ResponsiveContainer width="50%" height={180}>
@@ -245,6 +253,10 @@ export default function AdminAnalytics() {
             {loading ? (
               <div className="space-y-3">
                 {[1,2,3,4].map(i => <div key={i} className="h-8 bg-gray-100 rounded-lg animate-pulse" />)}
+              </div>
+            ) : (analytics.topVendors || []).length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+                No vendor data for this period
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={190}>

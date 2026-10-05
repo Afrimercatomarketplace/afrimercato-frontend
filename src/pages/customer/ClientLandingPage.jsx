@@ -1040,6 +1040,7 @@ export default function ClientLandingPage() {
                 <li><Link to="/register?role=vendor" className="hover:text-yellow-500 transition-colors">Partner With Us</Link></li>
                 <li><Link to="/privacy-policy" className="hover:text-yellow-500 transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/privacy-policy#refund-policy" className="hover:text-yellow-500 transition-colors">Refund Policy</Link></li>
+                <li><Link to="/terms-of-service" className="hover:text-yellow-500 transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
 

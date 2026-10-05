@@ -1631,6 +1631,9 @@ function CheckoutForm() {
                   <span>Delivery Fee</span>
                   <span>{deliveryFee === 0 ? 'FREE' : `£${deliveryFee.toFixed(2)}`}</span>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Estimated delivery: 2 to 4 business days after dispatch
+                </p>
                 {cartTotal >= 50 && (
                   <p className="text-xs text-green-600">🎉 Free delivery on orders over £50</p>
                 )}

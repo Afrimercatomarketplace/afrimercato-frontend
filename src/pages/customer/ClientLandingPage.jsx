@@ -100,15 +100,16 @@ export default function ClientLandingPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
     const query = location.trim()
-    if (query.length < 2) {
-      setLocationSuggestions([])
+    const staticMatches = query
+      ? UK_CITIES.filter((city) => city.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
+      : recentSearches.slice(0, 6)
+
+    setLocationSuggestions(staticMatches)
+
+    if (!query) {
+      setLocationLoading(false)
       return
     }
-
-    // Static fallback filter (instant)
-    const staticMatches = UK_CITIES.filter(c =>
-      c.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, 6)
 
     const locationIQKey = import.meta.env.VITE_LOCATIONIQ_TOKEN
 
@@ -131,29 +132,34 @@ export default function ClientLandingPage() {
           tag: 'place:city,place:town,place:village,place:suburb,boundary:administrative'
         })
         const res = await fetch(`https://api.locationiq.com/v1/autocomplete?${params}`)
-        const data = await res.json()
-        if (!Array.isArray(data) || data.length === 0) {
-          setLocationSuggestions(staticMatches)
-          return
+
+        if (!res.ok) {
+          throw new Error(`LocationIQ request failed with status ${res.status}`)
         }
-        const suggestions = data
-          .map((item) => {
-            if (item.display_place && item.display_address) {
-              const region = item.display_address.split(',')[0].trim()
-              return region ? `${item.display_place}, ${region}` : item.display_place
-            }
-            return item.display_name?.split(',').slice(0, 2).join(',').trim() || ''
-          })
-          .filter(Boolean)
-        // If API returned data but mapping produced nothing, use static fallback
-        setLocationSuggestions(suggestions.length > 0 ? [...new Set(suggestions)] : staticMatches)
+
+        const data = await res.json()
+        const apiSuggestions = Array.isArray(data)
+          ? data
+              .map((item) => {
+                if (item.display_place && item.display_address) {
+                  const region = item.display_address.split(',')[0].trim()
+                  return region ? `${item.display_place}, ${region}` : item.display_place
+                }
+
+                return item.display_name?.split(',').slice(0, 2).join(',').trim() || ''
+              })
+              .filter(Boolean)
+          : []
+
+        const merged = [...new Set([...apiSuggestions, ...staticMatches])].slice(0, 8)
+        setLocationSuggestions(merged.length > 0 ? merged : staticMatches)
       } catch (_e) {
         // API failed — fall back to static list
         setLocationSuggestions(staticMatches)
       } finally {
         setLocationLoading(false)
       }
-    }, 350)
+    }, 250)
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [location])
@@ -557,7 +563,11 @@ export default function ClientLandingPage() {
                 <input
                   type="text"
                   value={location}
-                  onChange={(e) => { setLocation(e.target.value); setShowLocationDropdown(true) }}
+                  onChange={(e) => {
+                    const nextValue = e.target.value
+                    setLocation(nextValue)
+                    setShowLocationDropdown(true)
+                  }}
                   onFocus={() => setShowLocationDropdown(true)}
                   onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
                   placeholder="Enter your location to see nearby store"
@@ -582,49 +592,35 @@ export default function ClientLandingPage() {
                     className="absolute top-full left-1/2 -translate-x-1/2 w-full max-w-2xl mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50"
                   >
                     <div className="p-3">
-                      {location.trim().length >= 2 ? (
-                        <>
-                          <p className="text-xs text-gray-500 font-medium mb-2 px-2">Suggestions</p>
-                          {locationLoading && (
-                            <div className="flex items-center gap-2 px-3 py-2.5 text-gray-400 text-sm">
-                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                              </svg>
-                              Searching...
-                            </div>
-                          )}
-                          {!locationLoading && locationSuggestions.length === 0 && (
-                            <p className="text-sm text-gray-400 px-3 py-2.5">No results found</p>
-                          )}
-                          {!locationLoading && locationSuggestions.map((suggestion) => (
-                            <button
-                              key={suggestion}
-                              type="button"
-                              onClick={() => selectLocation(suggestion)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left"
-                            >
-                              <MapPin size={14} className="text-[#FFB800] flex-shrink-0" />
-                              <span className="text-gray-700">{suggestion}</span>
-                            </button>
-                          ))}
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-xs text-gray-500 font-medium mb-2 px-2">Popular locations</p>
-                          {recentSearches.map((city) => (
-                            <button
-                              key={city}
-                              type="button"
-                              onClick={() => selectLocation(city)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left"
-                            >
-                              <MapPin size={14} className="text-[#FFB800] flex-shrink-0" />
-                              <span className="text-gray-700">{city}</span>
-                            </button>
-                          ))}
-                        </>
+                      <p className="text-xs text-gray-500 font-medium mb-2 px-2">
+                        {location.trim() ? 'Suggestions' : 'Popular locations'}
+                      </p>
+
+                      {locationLoading && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 text-gray-400 text-sm">
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          Searching...
+                        </div>
                       )}
+
+                      {!locationLoading && locationSuggestions.length === 0 && (
+                        <p className="text-sm text-gray-400 px-3 py-2.5">No results found</p>
+                      )}
+
+                      {!locationLoading && locationSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => selectLocation(suggestion)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                        >
+                          <MapPin size={14} className="text-[#FFB800] flex-shrink-0" />
+                          <span className="text-gray-700">{suggestion}</span>
+                        </button>
+                      ))}
                     </div>
                   </motion.div>
                 )}

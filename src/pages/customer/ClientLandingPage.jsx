@@ -59,6 +59,21 @@ export default function ClientLandingPage() {
   // ADDED: include Cardiff, Newport, Swansea in recent searches
   const recentSearches = ['Bristol', 'London', 'Manchester', 'Birmingham', 'Cardiff', 'Newport', 'Swansea', 'Liverpool', 'Plymouth', 'Essex', 'Sussex']
 
+  const deliveryCities = [
+    'London',
+    'Manchester',
+    'Birmingham',
+    'Leeds',
+    'Leicester',
+    'Cardiff',
+    'Newport',
+    'Swansea',
+    'Plymouth',
+    'Liverpool',
+    'Essex',
+    'Sussex'
+  ]
+
   // Detect scroll for nav styling
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10)
@@ -624,8 +639,7 @@ export default function ClientLandingPage() {
               className="mt-4 flex flex-wrap items-center gap-2 justify-center"
             >
               <span className="text-gray-700 text-sm font-medium">Popular:</span>
-              {/* ADDED: replaced Leeds with Cardiff, and added Newport, Swansea as extra tags */}
-              {['London', 'Birmingham', 'Manchester', 'Cardiff', 'Bristol', 'Newport', 'Swansea', 'Liverpool', 'Plymouth', 'Essex', 'Sussex'].map((city) => (
+              {deliveryCities.map((city) => (
                 <button
                   key={city}
                   type="button"
@@ -1061,6 +1075,22 @@ export default function ClientLandingPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+
+          <div className="mb-10">
+            <h4 className="font-bold text-lg mb-4 text-white">We Deliver To</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {deliveryCities.map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => selectLocation(city)}
+                  className="inline-flex items-center justify-center rounded-full border border-gray-700 bg-white/5 px-3 py-2 text-sm text-gray-200 transition-all duration-200 hover:border-[#FFB800] hover:bg-[#FFB800]/10 hover:text-[#FFB800] focus:outline-none focus:ring-2 focus:ring-[#FFB800]"
+                >
+                  {city}
+                </button>
+              ))}
             </div>
           </div>
 

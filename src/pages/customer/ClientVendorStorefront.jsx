@@ -411,7 +411,12 @@ export default function ClientVendorStorefront() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredProducts.map((product, index) => (
-                    <ProductCard key={product.id || product._id || index} product={product} onAddToCart={() => addToCart(product)} />
+                    <ProductCard
+                      key={product.id || product._id || index}
+                      product={product}
+                      onOpen={() => navigate(`/product/${product._id || product.id}`)}
+                      onAddToCart={() => addToCart(product)}
+                    />
                   ))}
                 </div>
               )}
@@ -557,11 +562,12 @@ export default function ClientVendorStorefront() {
   )
 }
 
-function ProductCard({ product, onAddToCart, isDiscount }) {
+function ProductCard({ product, onOpen, onAddToCart, isDiscount }) {
   const [added, setAdded] = useState(false)
   const outOfStock = product.stock === 0 || product.inStock === false
 
-  const handleAdd = () => {
+  const handleAdd = (event) => {
+    event.stopPropagation()
     if (outOfStock) return
     onAddToCart()
     setAdded(true)
@@ -571,7 +577,19 @@ function ProductCard({ product, onAddToCart, isDiscount }) {
   const imageUrl = getProductImage(product)
 
   return (
-    <motion.div whileHover={{ y: outOfStock ? 0 : -4 }} className={`group bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 overflow-hidden ${outOfStock ? 'opacity-60' : ''}`}>
+    <motion.div
+      role="link"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen()
+        }
+      }}
+      whileHover={{ y: outOfStock ? 0 : -4 }}
+      className={`group bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer ${outOfStock ? 'opacity-60' : ''}`}
+    >
       <div className="relative overflow-hidden">
         <img
           src={imageUrl}

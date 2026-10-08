@@ -209,6 +209,7 @@ function ProductDetail() {
   const images = product.images?.length > 0
     ? product.images.map(img => img.url || img)
     : [getProductImage(product)]
+  const isOutOfStock = product.inStock === false || (!product.unlimitedStock && Number(product.stock) <= 0)
 
   const averageRating = product.reviews?.length
     ? (product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length).toFixed(1)
@@ -314,7 +315,7 @@ function ProductDetail() {
 
               {/* Stock Status */}
               <div className="mb-6">
-                {product.inStock !== false && product.stock > 0 ? (
+                {!isOutOfStock ? (
                   <span className="inline-flex items-center gap-2 text-green-600">
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                     In Stock ({product.stock} available)
@@ -351,14 +352,14 @@ function ProductDetail() {
               <div className="flex gap-3 mb-6">
                 <button
                   onClick={addToCart}
-                  disabled={!product.inStock || addingToCart}
+                  disabled={isOutOfStock || addingToCart}
                   className="flex-1 py-4 bg-afri-green text-white rounded-xl font-semibold hover:bg-afri-green-dark disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {addingToCart ? 'Adding...' : 'Add to Cart'}
                 </button>
                 <button
                   onClick={buyNow}
-                  disabled={!product.inStock}
+                  disabled={isOutOfStock}
                   className="flex-1 py-4 bg-afri-gold text-gray-900 rounded-xl font-semibold hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Buy Now

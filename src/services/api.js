@@ -395,7 +395,14 @@ export const getVendorBySlug = async (slug) => {
 };
 
 export const getVendorProductsByVendorId = async (vendorId) => {
-  return apiCall(`/products/vendor/${vendorId}`);
+  try {
+    return await apiCall(`/vendors/${vendorId}/products`);
+  } catch (error) {
+    if (error.status === 404 || error.message === 'Not Found') {
+      return apiCall(`/products/vendor/${vendorId}`);
+    }
+    throw error;
+  }
 };
 
 // PRODUCTS (Customer)

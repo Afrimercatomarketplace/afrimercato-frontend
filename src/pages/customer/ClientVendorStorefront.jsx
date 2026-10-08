@@ -90,8 +90,12 @@ export default function ClientVendorStorefront() {
           if (storedVendor) setVendor(JSON.parse(storedVendor))
         }
 
-        // Properly handle the products array, even if it's empty
-        const productsList = Array.isArray(response.data) ? response.data : []
+        const responseData = response?.data ?? response
+        const productsList = Array.isArray(responseData)
+          ? responseData
+          : Array.isArray(responseData?.products)
+            ? responseData.products
+            : []
         setProducts(productsList)
       }
     } catch (error) {

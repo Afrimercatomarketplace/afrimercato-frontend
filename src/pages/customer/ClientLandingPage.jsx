@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getFeaturedVendors, joinWaitlist } from '../../services/api'
+import { SUGGESTED_CITIES } from '../../constants/locations'
 import { Phone, Mail, MapPin, Store, Bike, ShoppingBag, Star, ArrowRight, Package, Truck, Globe, Zap, Briefcase, ShoppingBasket, Clock, Tag, Flame, Leaf, Coffee } from 'lucide-react'
 import { Star as PhStar, ShoppingCart as PhCart } from '@phosphor-icons/react'
 
@@ -81,13 +82,9 @@ export default function ClientLandingPage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Static UK fallback locations for when LocationIQ is unavailable
-  // ADDED: Cardiff, Newport, Swansea to the static list
+  // Static fallback locations for when LocationIQ is unavailable
   const UK_CITIES = [
-    'London', 'Manchester', 'Birmingham', 'Leeds', 'Sheffield',
-    'Bristol', 'Liverpool', 'Leicester', 'Edinburgh', 'Glasgow',
-    'Coventry', 'Bradford', 'Nottingham', 'Southampton', 'Cardiff',   // added Cardiff
-    'Newport', 'Swansea', 'Plymouth', 'Essex', 'Sussex',             // added Newport, Swansea, Plymouth, Essex, Sussex
+    ...SUGGESTED_CITIES.map(({ name }) => name),
     'Peckham, London', 'Brixton, London', 'Tottenham, London',
     'East Ham, London', 'Hackney, London', 'Lewisham, London',
     'Croydon, London', 'Southwark, London', 'Newham, London',
@@ -100,9 +97,9 @@ export default function ClientLandingPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
     const query = location.trim()
-    const staticMatches = query
+    const staticMatches = query.length >= 2
       ? UK_CITIES.filter((city) => city.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
-      : recentSearches.slice(0, 6)
+      : query ? [] : recentSearches.slice(0, 6)
 
     setLocationSuggestions(staticMatches)
 
@@ -610,7 +607,7 @@ export default function ClientLandingPage() {
                         <p className="text-sm text-gray-400 px-3 py-2.5">No results found</p>
                       )}
 
-                      {!locationLoading && locationSuggestions.map((suggestion) => (
+                      {locationSuggestions.map((suggestion) => (
                         <button
                           key={suggestion}
                           type="button"

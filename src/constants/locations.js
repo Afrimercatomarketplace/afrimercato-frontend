@@ -19,6 +19,7 @@ export const SUGGESTED_CITIES = [
   
   // Additional UK Cities (QA Request)
   { name: 'Worthing', country: 'UK', region: 'England' },
+  { name: 'Brighton', country: 'UK', region: 'England' },
   { name: 'Hull', country: 'UK', region: 'England' },
   { name: 'Southampton', country: 'UK', region: 'England' },
   { name: 'Plymouth', country: 'UK', region: 'England' },

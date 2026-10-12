@@ -1056,7 +1056,7 @@ export default function ClientLandingPage() {
               <h4 className="font-bold mb-4">Cities</h4>
               <ul className="space-y-2 text-gray-400">
                 {/* ADDED: Cardiff, Newport, Swansea to the footer city list */}
-                {['Bristol', 'London', 'Leicester', 'Liverpool', 'Birmingham', 'Manchester', 'Cardiff', 'Newport', 'Swansea', 'Plymouth', 'Essex', 'Sussex'].map((city) => (
+                {['Bristol', 'London', 'Leicester', 'Liverpool', 'Birmingham', 'Manchester', 'Cardiff', 'Newport', 'Swansea', 'Plymouth', 'Essex', 'Sussex', 'Edinburgh', 'Glasgow'].map((city) => (
                   <li key={city}>
                     <button
                       type="button"

@@ -63,7 +63,11 @@ function CheckoutForm() {
   const isCustomer = useMemo(() => isCustomerRole(user), [user?.role, user?.roles, user?.primaryRole])
 
   const [cart, setCart] = useState([])
-  const [step, setStep] = useState(1) // 1: Address, 2: Payment, 3: Confirm
+  const [step, setStep] = useState(() => {
+    const resumeStep = Number(sessionStorage.getItem('checkoutResumeStep'))
+    sessionStorage.removeItem('checkoutResumeStep')
+    return resumeStep === 3 ? 3 : 1
+  }) // 1: Address, 2: Payment, 3: Confirm
   const [loading, setLoading] = useState(false)
   const [cartLoading, setCartLoading] = useState(true)
   const [vendor, setVendor] = useState(null)
@@ -143,6 +147,11 @@ function CheckoutForm() {
     country: 'United Kingdom', // always locked
     instructions: ''
   })
+  const [savedAddresses, setSavedAddresses] = useState([])
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState('')
+  const [repeatPurchaseFrequency, setRepeatPurchaseFrequency] = useState(
+    () => localStorage.getItem('repeatPurchaseFrequency') || ''
+  )
   // Payment form
   const [payment, setPayment] = useState({
     method: 'card',
@@ -300,22 +309,27 @@ function CheckoutForm() {
     const prefillAddress = async () => {
       try {
         const res = await userAPI.getProfile()
-        const profile = res?.data || res
+        const profile = res?.data?.user || res?.data || res?.user || res
         if (!profile) return
 
         // ── 1. Try saved addresses first ─────────────────────────────
-        const savedAddr = profile.addresses?.find(a => a.isDefault)
-          || profile.addresses?.[0]
+        const addresses = Array.isArray(profile.addresses) && profile.addresses.length > 0
+          ? profile.addresses
+          : Array.isArray(user?.addresses) ? user.addresses : []
+        setSavedAddresses(addresses)
+        const savedAddr = addresses.find(a => a.isDefault) || addresses[0]
 
         if (savedAddr?.street) {
+          const savedAddressIndex = addresses.indexOf(savedAddr)
+          setSelectedSavedAddressId(String(savedAddr._id || savedAddressIndex))
           setAddress(prev => ({
             fullName: prev.fullName || profile.name || '',
             phone: prev.phone || profile.phone || savedAddr.phone || '',
-            street: prev.street || savedAddr.street,
-            city: prev.city || savedAddr.city,
+            street: prev.street || savedAddr.street || '',
+            city: prev.city || savedAddr.city || '',
             county: prev.county || savedAddr.county || '',
-            postcode: prev.postcode || savedAddr.postcode,
-            country: 'United Kingdom',
+            postcode: prev.postcode || savedAddr.postcode || '',
+            country: savedAddr.country || 'United Kingdom',
             instructions: prev.instructions || ''
           }))
           return // done, no need to fetch orders
@@ -364,10 +378,28 @@ function CheckoutForm() {
           console.warn('[Prefill] Could not fetch last order:', orderErr.message)
         }
 
-      } catch (_e) { }
+      } catch (_e) {
+        const addresses = Array.isArray(user?.addresses) ? user.addresses : []
+        setSavedAddresses(addresses)
+        const savedAddr = addresses.find(a => a.isDefault) || addresses[0]
+        if (savedAddr?.street) {
+          const savedAddressIndex = addresses.indexOf(savedAddr)
+          setSelectedSavedAddressId(String(savedAddr._id || savedAddressIndex))
+          setAddress(prev => ({
+            ...prev,
+            fullName: savedAddr.fullName || user?.name || '',
+            phone: savedAddr.phone || user?.phone || '',
+            street: savedAddr.street,
+            city: savedAddr.city || '',
+            county: savedAddr.county || '',
+            postcode: savedAddr.postcode || '',
+            country: savedAddr.country || 'United Kingdom'
+          }))
+        }
+      }
     }
     prefillAddress()
-  }, [isAuthenticated, isCustomer])
+  }, [isAuthenticated, isCustomer, user?.addresses, user?.name, user?.phone])
 
   // After successful login during checkout, auto-advance to payment step
   useEffect(() => {
@@ -521,8 +553,6 @@ function CheckoutForm() {
     setLoading(true)
 
     try {
-      const repeatPurchaseFrequency = localStorage.getItem('repeatPurchaseFrequency')
-
       const orderData = {
         items: cart.map(item => ({
           product: item._id,
@@ -609,6 +639,7 @@ function CheckoutForm() {
           // Clear Local Storage
           localStorage.removeItem('afrimercato_cart')
           localStorage.removeItem('repeatPurchaseFrequency')
+          setRepeatPurchaseFrequency('')
 
           //  Clear Backend Cart!
           if (isAuthenticated && isCustomer) {
@@ -1010,6 +1041,43 @@ function CheckoutForm() {
               <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Delivery Address</h2>
                 <form onSubmit={handleAddressSubmit}>
+                  {savedAddresses.length > 0 && (
+                    <div className="mb-4">
+                      <label htmlFor="saved-delivery-address" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Saved delivery address
+                      </label>
+                      <select
+                        id="saved-delivery-address"
+                        value={selectedSavedAddressId}
+                        onChange={(e) => {
+                          const selectedId = e.target.value
+                          const selectedAddress = savedAddresses.find((saved, index) =>
+                            String(saved._id || index) === selectedId
+                          )
+                          if (!selectedAddress) return
+                          setSelectedSavedAddressId(selectedId)
+                          setAddress(prev => ({
+                            ...prev,
+                            fullName: selectedAddress.fullName || prev.fullName,
+                            phone: selectedAddress.phone || prev.phone,
+                            street: selectedAddress.street || '',
+                            city: selectedAddress.city || '',
+                            county: selectedAddress.county || '',
+                            postcode: selectedAddress.postcode || '',
+                            country: selectedAddress.country || 'United Kingdom'
+                          }))
+                          setPostcodeError('')
+                        }}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[44px]"
+                      >
+                        {savedAddresses.map((saved, index) => (
+                          <option key={saved._id || index} value={String(saved._id || index)}>
+                            {saved.label || 'Address'}: {saved.street}, {saved.city} {saved.postcode}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1376,7 +1444,7 @@ function CheckoutForm() {
 
                 {/* Repurchase Options Display */}
                 {(() => {
-                  const savedFrequency = localStorage.getItem('repeatPurchaseFrequency');
+                  const savedFrequency = repeatPurchaseFrequency
                   return savedFrequency ? (
                     <div className="mb-6 pb-6 border-b">
                       <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -1395,7 +1463,7 @@ function CheckoutForm() {
                         type="button"
                         onClick={() => {
                           localStorage.removeItem('repeatPurchaseFrequency');
-                          window.location.reload();
+                          setRepeatPurchaseFrequency('')
                         }}
                         className="text-green-600 text-sm font-semibold mt-2 hover:underline"
                       >
@@ -1413,7 +1481,10 @@ function CheckoutForm() {
                       </p>
                       <button
                         type="button"
-                        onClick={() => navigate('/cart')}
+                        onClick={() => {
+                          sessionStorage.setItem('checkoutResumeStep', String(step))
+                          navigate('/cart')
+                        }}
                         className="text-green-600 text-sm font-semibold hover:underline"
                       >
                         ← Back to cart to set up

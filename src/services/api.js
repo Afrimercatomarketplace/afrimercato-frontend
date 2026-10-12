@@ -558,7 +558,7 @@ export const updateCustomerAddress = async (addressId, addressData) => {
 // Called fire-and-forget after checkout so the next visit pre-fills automatically.
 export const saveDefaultAddress = async (addressData) => {
   return apiCall('/customers/addresses/save-default', {
-    method: 'PUT',
+    method: 'POST',
     body: JSON.stringify(addressData)
   });
 };

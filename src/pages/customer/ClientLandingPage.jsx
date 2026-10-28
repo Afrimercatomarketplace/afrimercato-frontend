@@ -30,6 +30,21 @@ const CATEGORIES = [
   { id: 'snacks', label: 'Snacks', Icon: Package },
 ]
 
+// Static fallback locations for when LocationIQ is unavailable
+const UK_CITIES = [
+  ...SUGGESTED_CITIES.map(({ name }) => name),
+  'Peckham, London', 'Brixton, London', 'Tottenham, London',
+  'East Ham, London', 'Hackney, London', 'Lewisham, London',
+  'Croydon, London', 'Southwark, London', 'Newham, London',
+  'Moss Side, Manchester', 'Handsworth, Birmingham', 'Chapeltown, Leeds',
+  'Sparkbrook, Birmingham', 'Toxteth, Liverpool',
+]
+
+function filterUkCities(query) {
+  const q = query.toLowerCase()
+  return UK_CITIES.filter((city) => city.toLowerCase().includes(q)).slice(0, 6)
+}
+
 export default function ClientLandingPage() {
   const navigate = useNavigate()
   const [location, setLocation] = useState('')
@@ -82,24 +97,14 @@ export default function ClientLandingPage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Static fallback locations for when LocationIQ is unavailable
-  const UK_CITIES = [
-    ...SUGGESTED_CITIES.map(({ name }) => name),
-    'Peckham, London', 'Brixton, London', 'Tottenham, London',
-    'East Ham, London', 'Hackney, London', 'Lewisham, London',
-    'Croydon, London', 'Southwark, London', 'Newham, London',
-    'Moss Side, Manchester', 'Handsworth, Birmingham', 'Chapeltown, Leeds',
-    'Sparkbrook, Birmingham', 'Toxteth, Liverpool',
-  ]
-
   // Live location autocomplete — LocationIQ with static UK fallback
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
     const query = location.trim()
-    const staticMatches = query.length >= 2
-      ? UK_CITIES.filter((city) => city.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
-      : query ? [] : recentSearches.slice(0, 6)
+    const staticMatches = query
+      ? filterUkCities(query)
+      : recentSearches.slice(0, 6)
 
     setLocationSuggestions(staticMatches)
 
@@ -108,16 +113,25 @@ export default function ClientLandingPage() {
       return
     }
 
-    const locationIQKey = import.meta.env.VITE_LOCATIONIQ_TOKEN
+    const locationIQKey = String(import.meta.env.VITE_LOCATIONIQ_TOKEN || '').trim()
 
-    // If no API key, use static list only
+    // No usable token — static UK_CITIES only
     if (!locationIQKey) {
-      setLocationSuggestions(staticMatches)
+      setLocationLoading(false)
+      return
+    }
+
+    // LocationIQ is unreliable below 2 chars; keep local results visible
+    if (query.length < 2) {
+      setLocationLoading(false)
       return
     }
 
     debounceRef.current = setTimeout(async () => {
       setLocationLoading(true)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 4000)
+
       try {
         const params = new URLSearchParams({
           key: locationIQKey,
@@ -126,9 +140,11 @@ export default function ClientLandingPage() {
           countrycodes: 'gb,ie',
           dedupe: '1',
           normalizecity: '1',
-          tag: 'place:city,place:town,place:village,place:suburb,boundary:administrative'
+          tag: 'place:city,place:town,place:village,place:suburb,boundary:administrative',
         })
-        const res = await fetch(`https://api.locationiq.com/v1/autocomplete?${params}`)
+        const res = await fetch(`https://api.locationiq.com/v1/autocomplete?${params}`, {
+          signal: controller.signal,
+        })
 
         if (!res.ok) {
           throw new Error(`LocationIQ request failed with status ${res.status}`)
@@ -142,7 +158,6 @@ export default function ClientLandingPage() {
                   const region = item.display_address.split(',')[0].trim()
                   return region ? `${item.display_place}, ${region}` : item.display_place
                 }
-
                 return item.display_name?.split(',').slice(0, 2).join(',').trim() || ''
               })
               .filter(Boolean)
@@ -151,14 +166,16 @@ export default function ClientLandingPage() {
         const merged = [...new Set([...apiSuggestions, ...staticMatches])].slice(0, 8)
         setLocationSuggestions(merged.length > 0 ? merged : staticMatches)
       } catch (_e) {
-        // API failed — fall back to static list
         setLocationSuggestions(staticMatches)
       } finally {
+        clearTimeout(timeoutId)
         setLocationLoading(false)
       }
     }, 250)
 
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [location])
 
   // Fetch real stores from API
